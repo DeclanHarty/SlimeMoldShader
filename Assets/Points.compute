@@ -1,0 +1,82 @@
+#pragma kernel Main
+
+struct Point{
+    float2 position;
+    float speed;
+    float angle;
+};
+
+#define PI 3.14159265358979311599796
+
+float unity_DeltaTime;
+float4 _Time;
+float angleChangeRate;
+float maxAngle;
+
+uint width;
+uint height;
+
+RWStructuredBuffer<Point> points;
+RWTexture2D<float4> map;
+
+float hash11(float p)
+{
+    p = frac(p * .1031);
+    p *= p + 33.33;
+    p *= p + p;
+    return frac(p);
+}
+
+void CheckCollisions(uint3 id){
+    float2 position = points[id.x].position;
+    if(position.x < -0.f){
+        float rand = hash11(_Time.y + id.x);
+        float angle = lerp(-PI/2, PI/2, rand);
+        points[id.x].angle = angle;
+    }
+
+    if(position.x > width){
+        float rand = hash11(_Time.y + id.x);
+        float angle = lerp(PI/2, 3*PI/2, rand);
+        points[id.x].angle = angle;    
+    }
+
+    if(position.y < -0.f){
+        float rand = hash11(_Time.y + id.x);
+        float angle = lerp(0, PI, rand);
+        points[id.x].angle = angle;
+    }
+
+    if(position.y > height){
+        float rand = hash11(_Time.y + id.x);
+        float angle = lerp(PI, 2*PI, rand);
+        points[id.x].angle = angle;
+    }
+
+    points[id.x].position.x = clamp(position.x, 0, width);
+    points[id.x].position.y = clamp(position.y, 0, height);
+}
+
+float UpdateAngle(float currentAngle, uint3 id){
+    float rand = hash11(_Time.y + id.x);
+    float angleDifference = lerp(-maxAngle/2, maxAngle/2, rand);
+    float newAngle = lerp(currentAngle, currentAngle + angleDifference, angleChangeRate * unity_DeltaTime);
+    return newAngle;
+}
+
+void UpdatePoint(uint3 id){
+    CheckCollisions(id);
+    float2 pos = points[id.x].position;
+    float speed = points[id.x].speed;
+    float angle = points[id.x].angle;
+    points[id.x].position = pos + (speed * float2(cos(angle * 2 * PI), sin(angle * 2 * PI)) * unity_DeltaTime);
+    map[int2(pos.x, pos.y)] = 1;
+}
+
+
+
+[numthreads(32,1,1)]
+void Main(uint3 id : SV_DispatchThreadID){
+    UpdatePoint(id);
+}
+
