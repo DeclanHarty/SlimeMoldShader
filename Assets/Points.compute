@@ -8,8 +8,8 @@ struct Point{
 
 #define PI 3.14159265358979311599796
 
-float unity_DeltaTime;
-float4 _Time;
+float deltaTime;
+float4 time;
 float angleChangeRate;
 float maxAngle;
 
@@ -27,50 +27,36 @@ float hash11(float p)
     return frac(p);
 }
 
-void CheckCollisions(uint3 id){
-    float2 position = points[id.x].position;
-    if(position.x < -0.f){
-        float rand = hash11(_Time.y + id.x);
-        float angle = lerp(-PI/2, PI/2, rand);
-        points[id.x].angle = angle;
-    }
-
-    if(position.x > width){
-        float rand = hash11(_Time.y + id.x);
-        float angle = lerp(PI/2, 3*PI/2, rand);
-        points[id.x].angle = angle;    
-    }
-
-    if(position.y < -0.f){
-        float rand = hash11(_Time.y + id.x);
-        float angle = lerp(0, PI, rand);
-        points[id.x].angle = angle;
-    }
-
-    if(position.y > height){
-        float rand = hash11(_Time.y + id.x);
-        float angle = lerp(PI, 2*PI, rand);
-        points[id.x].angle = angle;
-    }
-
-    points[id.x].position.x = clamp(position.x, 0, width);
-    points[id.x].position.y = clamp(position.y, 0, height);
+uint pcg_hash(uint input)
+{
+    uint state = input * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
 }
 
-float UpdateAngle(float currentAngle, uint3 id){
-    float rand = hash11(_Time.y + id.x);
-    float angleDifference = lerp(-maxAngle/2, maxAngle/2, rand);
-    float newAngle = lerp(currentAngle, currentAngle + angleDifference, angleChangeRate * unity_DeltaTime);
-    return newAngle;
+float ConvertHashToFloat(uint hash){
+    return hash / 4294967295.0;
 }
 
 void UpdatePoint(uint3 id){
-    CheckCollisions(id);
     float2 pos = points[id.x].position;
     float speed = points[id.x].speed;
     float angle = points[id.x].angle;
-    points[id.x].position = pos + (speed * float2(cos(angle * 2 * PI), sin(angle * 2 * PI)) * unity_DeltaTime);
-    map[int2(pos.x, pos.y)] = 1;
+
+    uint randomIndex = pos.x * width + pos.y + pcg_hash(id.x);
+    float rand = ConvertHashToFloat(pcg_hash(randomIndex << 1));
+
+    float2 newPos = pos + (speed * deltaTime * float2(cos(angle * 2 * PI), sin(angle * 2 * PI)) );
+    
+
+    if(newPos.x < 0 || newPos.x >= width || newPos.y < 0 || newPos.y >= height){
+        newPos.x = clamp(newPos.x, 1, width - 1.0);
+        newPos.y = clamp(newPos.y, 1, height - 1.0);
+        points[id.x].angle = rand * 2 * PI;
+    }
+
+    points[id.x].position = newPos;
+    map[int2(newPos.x, newPos.y)] = 1;
 }
 
 

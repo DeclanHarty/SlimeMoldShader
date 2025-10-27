@@ -113,13 +113,19 @@ public class Points : MonoBehaviour
 
         //points.SetBuffer(kernel, "points", pointsBuffer);
         //points.SetInt("boundSize", (int)boundSize);
-        trails.SetFloat("evaporationSpeed", evaporationSpeed);
         trails.SetFloat("diffuseSpeed", diffuseSpeed);
+        trails.SetFloat("evaporationSpeed", evaporationSpeed);
+        trails.SetFloat("deltaTime", Time.deltaTime);
+
+        points.SetFloat("deltaTime", Time.deltaTime);
+        points.SetFloat("time", Time.time);
+        points.SetFloat("angleChangeRate", angleChangeRate);
+        trails.Dispatch(trailsKern, Mathf.CeilToInt(width/8f), Mathf.CeilToInt(height/8f), 1);
         if (!pausePoints)
         {
-            points.Dispatch(pointsKern, Mathf.CeilToInt(numberOfPoints/32f), 1, 1);
+            points.Dispatch(pointsKern, Mathf.CeilToInt(numberOfPoints / 32f), 1, 1);
         }
         
-        trails.Dispatch(trailsKern, Mathf.CeilToInt(width/8f), Mathf.CeilToInt(height/8f), 1);
+        
     }
 }

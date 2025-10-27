@@ -7,7 +7,7 @@ uint width;
 uint height;
 float evaporationSpeed;
 float diffuseSpeed;
-float unity_DeltaTime;
+float deltaTime;
 
 float4 BoxBlur(uint3 id){
     float4 colorSum = 0;
@@ -19,24 +19,26 @@ float4 BoxBlur(uint3 id){
             if(sampleX >= 0 && sampleX < width && sampleY >= 0 && sampleY < height){
                 colorSum += map[int2(sampleX,sampleY)];
             }
-
         }
     }
 
-
-    return (colorSum / 9.f);
+    return (colorSum / 9);
 }
+    
 
 [numthreads(8,8,1)]
 void ProcessTrails (uint3 id : SV_DispatchThreadID)
 {
-    if(id.x < 0 || id.x > width || id.y < 0 || id.y > height){
+    if(id.x < 0 || id.x >= width || id.y < 0 || id.y >= height){
         return;
     }
 
     float4 originalVal = map[id.xy];
 
-    float4 evaporatedVal = max(0, originalVal - evaporationSpeed * unity_DeltaTime);
+    float4 blurVal = BoxBlur(id);
+    float4 diffuseVal = lerp(originalVal, blurVal, diffuseSpeed * deltaTime);
+
+    float4 evaporatedVal = max(0, diffuseVal - (evaporationSpeed * deltaTime));
     map[id.xy] = evaporatedVal;
 }
 
