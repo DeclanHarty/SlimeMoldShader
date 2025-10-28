@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641258, b: 0.5748171, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -263,7 +263,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   mat: {fileID: 2100000, guid: 5557e56a81e9d7d49827c7e809b310f2, type: 2}
-  numberOfPoints: 1
+  numberOfPoints: 100
   points: {fileID: 7200000, guid: e74ef3d7caa19e942a6b585b8b074195, type: 3}
   trails: {fileID: 7200000, guid: e4fcb67bf57645848bc6f1f865c9f3e9, type: 3}
   mapMaterial: {fileID: 2100000, guid: e5eb582da2ddddb44aefb0648a413e69, type: 2}
@@ -271,7 +271,7 @@ MonoBehaviour:
   height: 180
   pointSpeed: 100
   evaporationSpeed: 1
-  diffuseSpeed: 500
+  diffuseSpeed: 3
   angleChangeRate: 1
   maxAngle: 0
   pausePoints: 0

@@ -2,64 +2,67 @@
 
 struct Point{
     float2 position;
-    float speed;
     float angle;
 };
 
-#define PI 3.14159265358979311599796
+#define PI 3.1415
 
 float deltaTime;
 float4 time;
+
 float angleChangeRate;
 float maxAngle;
 
-uint width;
-uint height;
+float pointSpeed;
+
+int width;
+int height;
+
+int numberOfPoints;
 
 RWStructuredBuffer<Point> points;
 RWTexture2D<float4> map;
 
-float hash11(float p)
+uint hash(uint state)
 {
-    p = frac(p * .1031);
-    p *= p + 33.33;
-    p *= p + p;
-    return frac(p);
+    state ^= 2747636419u;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    return state;
 }
 
-uint pcg_hash(uint input)
+float scaleToRange01(uint state)
 {
-    uint state = input * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
+    return state / 4294967295.0;
 }
 
-float ConvertHashToFloat(uint hash){
-    return hash / 4294967295.0;
-}
+
 
 void UpdatePoint(uint3 id){
+    if(id.x >= numberOfPoints){
+        return;
+    }
+
     float2 pos = points[id.x].position;
-    float speed = points[id.x].speed;
     float angle = points[id.x].angle;
 
-    uint randomIndex = pos.x * width + pos.y + pcg_hash(id.x);
-    float rand = ConvertHashToFloat(pcg_hash(randomIndex << 1));
-
-    float2 newPos = pos + (speed * deltaTime * float2(cos(angle * 2 * PI), sin(angle * 2 * PI)) );
+    float2 newPos = pos + pointSpeed * deltaTime * float2(cos(angle), sin(angle));
     
 
     if(newPos.x < 0 || newPos.x >= width || newPos.y < 0 || newPos.y >= height){
-        newPos.x = clamp(newPos.x, 1, width - 1.0);
-        newPos.y = clamp(newPos.y, 1, height - 1.0);
-        points[id.x].angle = rand * 2 * PI;
+        uint random = hash(pos.y * width + pos.x + hash(id.x + time * 100000));
+
+        points[id.x].angle = 2 * PI * scaleToRange01(random);
+        newPos.x = clamp(newPos.x, 0, width - 1);
+        newPos.y = clamp(newPos.y, 0, height - 1);
     }
 
     points[id.x].position = newPos;
-    map[int2(newPos.x, newPos.y)] = 1;
+    map[int2(newPos.x, newPos.y)] = 1.0;
 }
-
-
 
 [numthreads(32,1,1)]
 void Main(uint3 id : SV_DispatchThreadID){
